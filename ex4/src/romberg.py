@@ -38,7 +38,7 @@ def romberg_integral(f, a, b, epsilon, max_iter=10000):
 
         h = (b - a) / (2 ** m)
 
-        _s = sum([f(a + (2 * k - 1) * h) for k in range(1, 1 + 2**(m-1))])
+        _s = sum((f(a + (2 * k - 1) * h) for k in range(1, 1 + 2**(m-1))))
         T[m][0] = T[m-1][0] / 2 + h * _s
 
         _t = 4      # 4 ** 1
@@ -96,7 +96,7 @@ def romberg_integral_sw(f, a, b, epsilon, max_iter=10000):
 
         h = (b - a) / (2 ** m)
 
-        _s = sum([f(a + (2 * k - 1) * h) for k in range(1, 1 + 2**(m-1))])
+        _s = sum((f(a + (2 * k - 1) * h) for k in range(1, 1 + 2**(m-1))))
         T[-1][0] = T[-2][0] / 2 + h * _s
 
         _t = 4      # 4 ** 1
