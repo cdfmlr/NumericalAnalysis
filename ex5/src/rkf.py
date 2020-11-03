@@ -81,3 +81,91 @@ def runge_kutta_fehlberg(f, a, b, h_min, h_max, y0, eps):
 
         if h < h_min:
             raise GeneratorExit("h_min too small. Failed to continue.")
+
+
+def rkf(f, a, b, h_min, h_max, y0, eps):
+    """Runge-Kutta-Fehlberg 方法（RKF）
+
+    用 **Runge-Kutta-Fehlberg 方法**求如下常微分方程初值问题的数值解:
+
+        y'(x) = f(x, y)  (for a <= x <= b)
+        y(a) = y_0
+
+    This function returns a generator that does lazy calculations，
+    which generates solutions (x, y) of the equation for x from a to b by step h.
+
+    Args:
+
+        f: 二元函数，y'(x) = f(x, y)
+        a, b: float, x 的区间端点
+        h_min: float, 最小步长
+        h_max: float, 最大步长
+        y0: float, 初值 y(a)
+        eps: float >= 0，容许误差
+
+    Yields:
+
+        (x, y)：方程的解 for x from a to b, step h.
+ 
+    Raises:
+
+        ValueError: (b > a) or (h_max < h_min) or (eps < 0)
+        GeneratorExit: h_min too small. Failed to continue.
+
+    """
+    if b < a:
+        raise ValueError("unexpected range [a, b] where b < a")
+    if h_max < h_min:
+        raise ValueError("unexpected step h_max < h_min ")
+    if eps < 0:
+        raise ValueError("unexpected eps < 0")
+
+    h = h_max
+
+    x = a
+    y = y0
+
+    CH = [0, 1 / 4, 3 / 8, 12 / 13, 1, 1 / 2]
+    CK = [[], 
+          [1 / 4], 
+          [3 / 32, 9 / 32], 
+          [1932 / 2197, - 7200 / 2197, 7296 / 2197], 
+          [439 / 216, -8, 3680 / 513, - 845 / 4104], 
+          [- 8 / 27, 2, - 3544 / 2565, 1859 / 4104, - 11 / 40]]
+    CR = [1 / 360, 0, - 128 / 4275, - 2197 / 75240, 1 / 50, 2 / 55]
+    CY = [25 / 216, 0, 1408 / 2565, 2197 / 4104, - 1/5, 0]
+
+    yield (x, y)
+
+    while x <= b:
+        k = [0] * 6
+        for i in range(6):
+            k[i] = h * f(x + CH[i] * h, y + sum( (CK[i][j] * k[j] for j in range(i)) ))
+
+        R = abs(sum(CR[j] * k[j] for j in range(6)))
+
+        if R <= h * eps:
+            x = x + h
+            y = y + sum((CY[j] * k[j] for j in range(6)))
+            yield (x, y)
+
+        delta = 0.84 * (eps * h / R) ** (1/4)
+
+        if delta <= 0.1:
+            h = 0.1 * h
+        elif delta >= 4:
+            h = 4 * h
+        else:
+            h = delta * h
+
+        if h > h_max:
+            h = h_max
+
+        if abs(x - b) < eps:
+            break
+        
+        if x + h > b:
+            h = b - x
+
+        if h < h_min:
+            raise GeneratorExit("h_min too small. Failed to continue.")
